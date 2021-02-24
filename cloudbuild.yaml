@@ -13,3 +13,50 @@ steps:
 - name: node
   entrypoint: npm
   args: ['run', 'build']
+
+- id: "build image"
+  name: "gcr.io/cloud-builders/docker"
+  args: ["build", "-t", "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}", "."]
+
+- id: "push image"
+  name: "gcr.io/cloud-builders/docker"
+  args: ["push", "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"]
+
+- id: "deploy prod service"
+  name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+  entrypoint: "gcloud"
+  args:
+    [
+      "run",
+      "deploy",
+      "${_SERVICE_NAME}",
+      "--platform",
+      "managed",
+      "--region",
+      "${_REGION}",
+      "--allow-unauthenticated",
+      "--image",
+      "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}",
+    ]
+
+# Force the new revision to serve 100% of traffic.
+- id: "ensure prod service live"
+  name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+  entrypoint: "gcloud"
+  args:
+    [
+      "run",
+      "services",
+      "update-traffic",
+      "${_SERVICE_NAME}",
+      "--to-latest",
+      "--platform",
+      "managed",
+      "--region",
+      "${_REGION}",
+    ]
+
+substitutions:
+  _SERVICE_NAME: my-app
+  _GCR_REGION: asia
+  _REGION: asia-southeast1
