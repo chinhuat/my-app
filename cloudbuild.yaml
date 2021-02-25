@@ -16,11 +16,11 @@ steps:
 
 - id: "build image"
   name: "gcr.io/cloud-builders/docker"
-  args: ["build", "-t", "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}", "."]
+  args: ["build", "-t", "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}-${BRANCH_NAME}", "."]
 
 - id: "push image"
   name: "gcr.io/cloud-builders/docker"
-  args: ["push", "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"]
+  args: ["push", "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}-${BRANCH_NAME}"]
 
 - id: "deploy prod service"
   name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -29,14 +29,14 @@ steps:
     [
       "run",
       "deploy",
-      "${_SERVICE_NAME}",
+      "${_SERVICE_NAME}-${BRANCH_NAME}",
       "--platform",
       "managed",
       "--region",
       "${_REGION}",
       "--allow-unauthenticated",
       "--image",
-      "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}",
+      "${_GCR_REGION}.gcr.io/${PROJECT_ID}/${_SERVICE_NAME}-${BRANCH_NAME}",
     ]
 
 # Force the new revision to serve 100% of traffic.
@@ -48,7 +48,7 @@ steps:
       "run",
       "services",
       "update-traffic",
-      "${_SERVICE_NAME}",
+      "${_SERVICE_NAME}-${BRANCH_NAME}",
       "--to-latest",
       "--platform",
       "managed",
